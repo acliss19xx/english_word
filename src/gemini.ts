@@ -1,11 +1,11 @@
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
 
 const CHECK_MODEL = "gemini-2.5-flash-preview-04-17";
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 // Exponential backoff retry
-async function fetchWithRetry(url, options, maxRetries = 5) {
-  let lastError;
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 5): Promise<Response> {
+  let lastError: Error | unknown;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
@@ -37,13 +37,12 @@ async function fetchWithRetry(url, options, maxRetries = 5) {
   throw lastError;
 }
 
-/**
- * Check if a user's answer is correct for the given English word.
- * @param {string} word - The English word
- * @param {string} userAnswer - The user's Japanese answer
- * @returns {Promise<{correct: boolean, explanation: string}>}
- */
-export async function checkAnswer(word, userAnswer) {
+export interface CheckAnswerResult {
+  correct: boolean;
+  explanation: string;
+}
+
+export async function checkAnswer(word: string, userAnswer: string): Promise<CheckAnswerResult> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${CHECK_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const body = {
@@ -67,25 +66,22 @@ export async function checkAnswer(word, userAnswer) {
     body: JSON.stringify(body),
   });
 
-  const data = await response.json();
+  const data = await response.json() as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
     throw new Error("Invalid response from Gemini API");
   }
 
   try {
-    return JSON.parse(text);
+    return JSON.parse(text) as CheckAnswerResult;
   } catch {
     throw new Error("Failed to parse Gemini response as JSON");
   }
 }
 
-/**
- * Generate TTS audio for the given word using Gemini TTS API.
- * @param {string} word - The English word to pronounce
- * @returns {Promise<HTMLAudioElement>} - Audio element ready to play
- */
-export async function generateTTS(word) {
+export async function generateTTS(word: string): Promise<HTMLAudioElement> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const body = {
@@ -112,7 +108,9 @@ export async function generateTTS(word) {
     body: JSON.stringify(body),
   });
 
-  const data = await response.json();
+  const data = await response.json() as {
+    candidates?: { content?: { parts?: { inlineData?: { data: string; mimeType: string } }[] } }[];
+  };
   const inlineData = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
 
   if (!inlineData) {
@@ -136,12 +134,7 @@ export async function generateTTS(word) {
   return audio;
 }
 
-/**
- * Play TTS audio for the given word.
- * @param {string} word
- * @returns {Promise<void>}
- */
-export async function speakWord(word) {
+export async function speakWord(word: string): Promise<void> {
   const audio = await generateTTS(word);
   return new Promise((resolve, reject) => {
     audio.onended = () => {

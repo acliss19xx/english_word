@@ -8,11 +8,20 @@ import ProgressBar from "./components/ProgressBar";
 import TrophyScreen from "./components/TrophyScreen";
 import { RefreshCw, AlertCircle, BookOpen, Trophy, Loader2 } from "lucide-react";
 
+type MasteryStatus = "mastered" | "wrong";
+type AppPhase = "init" | "session" | "summary" | "trophy";
+
+interface FeedbackState {
+  isCorrect: boolean;
+  explanation: string;
+  wasGiveUp?: boolean;
+}
+
 const SESSION_SIZE = 20;
 const WRONG_REQUEUE_OFFSET = 3;
 const MAX_WRONG_LOADED = 10;
 
-function shuffle(array) {
+function shuffle(array: string[]): string[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -21,7 +30,7 @@ function shuffle(array) {
   return arr;
 }
 
-function buildSessionQueue(wrongWords, masteredSet) {
+function buildSessionQueue(wrongWords: string[], masteredSet: Set<string>): string[] {
   const wrongPool = wrongWords
     .filter((w) => !masteredSet.has(w))
     .slice(0, MAX_WRONG_LOADED);
@@ -36,29 +45,29 @@ function buildSessionQueue(wrongWords, masteredSet) {
 }
 
 export default function App() {
-  const [masteryData, setMasteryData] = useState(null);
+  const [masteryData, setMasteryData] = useState<Map<string, MasteryStatus> | null>(null);
 
   // Session state
-  const [appPhase, setAppPhase] = useState("init"); // init | session | summary | trophy
-  const [sessionQueue, setSessionQueue] = useState([]);
+  const [appPhase, setAppPhase] = useState<AppPhase>("init");
+  const [sessionQueue, setSessionQueue] = useState<string[]>([]);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [sessionCorrect, setSessionCorrect] = useState(0);
-  const [sessionWrong, setSessionWrong] = useState(new Set());
-  const [sessionMastered, setSessionMastered] = useState(new Set());
+  const [sessionWrong, setSessionWrong] = useState<Set<string>>(new Set());
+  const [sessionMastered, setSessionMastered] = useState<Set<string>>(new Set());
 
   // UI state
-  const [currentWord, setCurrentWord] = useState(null);
-  const [feedback, setFeedback] = useState(null);
+  const [currentWord, setCurrentWord] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [checkError, setCheckError] = useState(null);
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
   const [questionNum, setQuestionNum] = useState(1);
 
   // refs for session state in async callbacks
-  const sessionWrongRef = useRef(new Set());
-  const sessionMasteredRef = useRef(new Set());
+  const sessionWrongRef = useRef<Set<string>>(new Set());
+  const sessionMasteredRef = useRef<Set<string>>(new Set());
   const sessionCorrectRef = useRef(0);
-  const masteryDataRef = useRef(null);
+  const masteryDataRef = useRef<Map<string, MasteryStatus> | null>(null);
 
   useEffect(() => { sessionWrongRef.current = sessionWrong; }, [sessionWrong]);
   useEffect(() => { sessionMasteredRef.current = sessionMastered; }, [sessionMastered]);
@@ -72,8 +81,8 @@ export default function App() {
   }, []);
 
   // ----- Start session -----
-  const startSession = useCallback((mastData) => {
-    const data = mastData || masteryDataRef.current;
+  const startSession = useCallback((mastData?: Map<string, MasteryStatus> | null) => {
+    const data = mastData ?? masteryDataRef.current;
     if (!data) return;
 
     const masteredSet = new Set(
@@ -119,7 +128,7 @@ export default function App() {
   }, [masteryData, appPhase, startSession]);
 
   // ----- Handle answer submission -----
-  const handleSubmit = useCallback(async (userAnswer) => {
+  const handleSubmit = useCallback(async (userAnswer: string) => {
     if (!currentWord || isChecking) return;
     setIsChecking(true);
     setCheckError(null);
@@ -133,7 +142,7 @@ export default function App() {
       }
     } catch (err) {
       console.error("Answer check error:", err);
-      setCheckError(err.message);
+      setCheckError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsChecking(false);
     }
@@ -152,9 +161,9 @@ export default function App() {
   }, [currentWord, isChecking]);
 
   // ----- End session: save to localStorage -----
-  const endSession = useCallback((finalWrong, finalMastered) => {
-    const updatedMastery = new Map(masteryDataRef.current || new Map());
-    const entries = [];
+  const endSession = useCallback((finalWrong: Set<string>, finalMastered: Set<string>) => {
+    const updatedMastery = new Map(masteryDataRef.current ?? new Map());
+    const entries: [string, MasteryStatus][] = [];
 
     for (const w of finalMastered) {
       updatedMastery.set(w, "mastered");

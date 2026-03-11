@@ -1,7 +1,12 @@
 import React from "react";
 import { Trophy, RotateCcw } from "lucide-react";
 
-export default function TrophyScreen({ masteredCount, onRestart }) {
+interface TrophyScreenProps {
+  masteredCount: number;
+  onRestart: () => void;
+}
+
+export default function TrophyScreen({ masteredCount, onRestart }: TrophyScreenProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-yellow-50 to-orange-50 px-6">
       <div className="text-center">

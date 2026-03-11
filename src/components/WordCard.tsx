@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Volume2, Loader2, HelpCircle } from "lucide-react";
 import { speakWord } from "../gemini";
 
+interface WordCardProps {
+  word: string;
+  onSubmit: (answer: string) => void;
+  onGiveUp: () => void;
+  isChecking: boolean;
+  questionNumber: number;
+  totalQuestions: number;
+  shake: boolean;
+}
+
 export default function WordCard({
   word,
   onSubmit,
@@ -10,11 +20,11 @@ export default function WordCard({
   questionNumber,
   totalQuestions,
   shake,
-}) {
+}: WordCardProps) {
   const [answer, setAnswer] = useState("");
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsError, setTtsError] = useState(false);
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const hasAutoPlayed = useRef(false);
 
   const handleTTS = useCallback(async () => {
@@ -56,13 +66,13 @@ export default function WordCard({
     return () => clearTimeout(timer);
   }, [word]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!answer.trim() || isChecking) return;
     onSubmit(answer.trim());
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSubmit(e);
     }
@@ -124,7 +134,7 @@ export default function WordCard({
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
-          spellCheck="false"
+          spellCheck={false}
         />
       </form>
 

@@ -1,7 +1,14 @@
 import React from "react";
 import { CheckCircle, XCircle, ChevronRight } from "lucide-react";
 
-export default function AnswerFeedback({ isCorrect, explanation, onNext, isLastWord }) {
+interface AnswerFeedbackProps {
+  isCorrect: boolean;
+  explanation: string;
+  onNext: () => void;
+  isLastWord: boolean;
+}
+
+export default function AnswerFeedback({ isCorrect, explanation, onNext, isLastWord }: AnswerFeedbackProps) {
   return (
     <div className={`animate-fadeIn rounded-xl p-4 mb-3 ${
       isCorrect

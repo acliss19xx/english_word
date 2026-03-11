@@ -1,5 +1,5 @@
 // EIKEN Grade 3 (英検3級) vocabulary list (~600 words)
-const wordList = [
+const wordList: string[] = [
   // Basic vocabulary
   "about", "after", "again", "ago", "air", "all", "also", "always", "animal",
   "another", "any", "apple", "around", "ask", "away", "back", "bad", "bag",
@@ -93,6 +93,6 @@ const wordList = [
 ];
 
 // Remove duplicates and sort
-const uniqueWordList = [...new Set(wordList)].sort();
+const uniqueWordList: string[] = [...new Set(wordList)].sort();
 
 export default uniqueWordList;

@@ -3,7 +3,12 @@ import { BookOpen } from "lucide-react";
 
 const TOTAL_WORDS = 600;
 
-export default function ProgressBar({ masteredCount, totalWords = TOTAL_WORDS }) {
+interface ProgressBarProps {
+  masteredCount: number;
+  totalWords?: number;
+}
+
+export default function ProgressBar({ masteredCount, totalWords = TOTAL_WORDS }: ProgressBarProps) {
   const percentage = Math.min(100, Math.round((masteredCount / totalWords) * 100));
 
   return (
